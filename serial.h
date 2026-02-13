@@ -72,7 +72,8 @@ typedef enum{
   SERIAL_STOPBITS_TWO,
 } SerialStopBits;
 
-#define SERIAL_INFINITE_TIMEOUT -1
+#define SERIAL_TIMEOUT_INFINITE 0
+#define SERIAL_TIMEOUT_NONE -1
 
 typedef struct{
   int baud_rate;
@@ -80,7 +81,7 @@ typedef struct{
   SerialFlowControl flow_control;
   SerialParity parity;
   SerialStopBits stop_bits;
-  int timeout;
+  int timeout_ms;
 } SerialSettings;
 
 typedef enum{
@@ -235,8 +236,8 @@ bool serial_open_with_settings(SerialPort* self, const char* device, SerialSetti
   if(settings.flow_control == 0) settings.flow_control = SERIAL_FLOWCTRL_NONE;
   if(settings.parity == 0) settings.parity = SERIAL_PARITY_NONE;
   if(settings.stop_bits == 0) settings.stop_bits = SERIAL_STOPBITS_ONE;
-  else if(settings.timeout < 0 
-      && settings.timeout != SERIAL_INFINITE_TIMEOUT
+  else if(settings.timeout_ms < 0 
+      && settings.timeout_ms != SERIAL_TIMEOUT_NONE
   ){
     self->err = SERIAL_ERR_INVALID_TIMEOUT;
     return false;
@@ -569,14 +570,14 @@ void serial_clear_output(SerialPort *self) {
 }
 
 int serial_read(SerialPort* self, char* buf, int length) {
-  int timeout = self->settings.timeout;
+  int timeout = self->settings.timeout_ms;
 #if SERIAL_OS_WINDOWS
   COMMTIMEOUTS timeouts;
-  if (timeout == -1) {
+  if (timeout == SERIAL_TIMEOUT_INFINITE) {
     timeouts.ReadIntervalTimeout = 0;
     timeouts.ReadTotalTimeoutConstant = 0;
     timeouts.ReadTotalTimeoutMultiplier = 0;
-  } else if (timeout == 0) {
+  } else if (timeout == SERIAL_TIMEOUT_NONE) {
     timeouts.ReadIntervalTimeout = MAXDWORD;
     timeouts.ReadTotalTimeoutConstant = 0;
     timeouts.ReadTotalTimeoutMultiplier = 0;
@@ -609,9 +610,9 @@ int serial_read(SerialPort* self, char* buf, int length) {
   tv.tv_usec = (timeout % 1000) / 1000;
 
   struct timeval* tvp = &tv;
-  if (timeout == -1) {
+  if (timeout == SERIAL_TIMEOUT_INFINITE) {
     tvp = NULL;
-  } else if (timeout == 0) {
+  } else if (timeout == SERIAL_TIMEOUT_NONE) {
     tv.tv_sec = 0;
     tv.tv_usec = 0;
   }
@@ -646,14 +647,14 @@ int serial_read(SerialPort* self, char* buf, int length) {
 }
 
 int serial_write(SerialPort* self, const char* buf, int length){
-  int timeout = self->settings.timeout;
+  int timeout = self->settings.timeout_ms;
 
 #if SERIAL_OS_WINDOWS
   COMMTIMEOUTS timeouts;
-  if (timeout == -1) {
+  if (timeout == SERIAL_TIMEOUT_INFINITE) {
     timeouts.WriteTotalTimeoutConstant = MAXDWORD;
     timeouts.WriteTotalTimeoutMultiplier = 0;
-  } else if (timeout == 0) {
+  } else if (timeout == SERIAL_TIMEOUT_NONE) {
     timeouts.WriteTotalTimeoutConstant = 0;
     timeouts.WriteTotalTimeoutMultiplier = 0;
   } else if (timeout > 0) {
@@ -664,7 +665,8 @@ int serial_write(SerialPort* self, const char* buf, int length){
   if (!SetCommTimeouts(self->handle, &timeouts)) {
     DWORD last_error = GetLastError();
     CloseHandle(self->handle);
-    // error out
+    self->err = SERIAL_ERR_PLATFORM;
+    return false;
   }
 
   DWORD written_count = 0;
@@ -687,8 +689,11 @@ int serial_write(SerialPort* self, const char* buf, int length){
   tv.tv_usec = (timeout % 1000) / 1000;
 
   struct timeval* tvp = &tv;
-  if (timeout == -1) {
+  if (timeout == SERIAL_TIMEOUT_INFINITE) {
     tvp = NULL;
+  }else if(timeout == SERIAL_TIMEOUT_NONE){
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
   }
 
   int written_count = 0;
