@@ -1,28 +1,48 @@
 #define SERIAL_IMPLEMENTATION
-#include "../include/serial.h"
+#include "../serial.h"
 
-#define NOB_IMPLEMENTATION
-#include "../nob.h"
+#include <stdio.h>
+#include <string.h>
 
 int main(int argc, char** argv){
-  const char* port_path = nob_shift_args(&argc, &argv);
-#if 0 
-  const char* baud_str = nob_shift_args(&argc, &argv);
-
-  char* endptr = NULL;
-  int baud = strtol(baud_str, &endptr, 10);
-  if(endptr == baud_str){
-    nob_log(NOB_ERROR, "Invalid baud: '%s'", baud_str);
-    return 1;
-  }
-#endif
 
   SerialPort port = {0};
-  if(!serial_open(&port, port_path,
-      .baud_rate = 9600,
-      .char_size = 8
-  )){
-    nob_log(NOB_ERROR, "Failed to open port: '%s'", port_path);
+
+  const char* port_path = "/dev/ttyUSB0";
+
+  // opens port with default settings, equivalent to
+  // ```
+  //   serial_open(&port, port_path,
+  //      .baud_rate      = 9600,
+  //      .char_size      = 8,
+  //      .flow_control   = SERIAL_FLOWCTRL_NONE,
+  //      .parity         = SERIAL_PARITY_NONE
+  //      .stop_bits      = SERIAL_PARITY_NONE
+  //      .timeout        = SERIAL_TIMEOUT_INFINITE
+  //   )
+  // ```
+  if(serial_open(&port, port_path) == false){
+    fprintf(stderr, "Failed to open port %s: %s\n", port_path, serial_strerror(serial_error(&port)));
     return 1;
   }
+
+  const char* msg = "Hello Device!";
+  if(serial_write(&port, msg, strlen(msg)) < 0){
+    fprintf(stderr, "Failed to write to port: %s\n", serial_strerror(serial_error(&port)));
+    return 1;
+  }
+
+  char buf[1024] = {0};
+  int n_read = serial_read(&port, buf, sizeof(buf)-1);
+  if(n_read < 0){
+    fprintf(stderr, "Failed to write to port: %s\n", serial_strerror(serial_error(&port)));
+    return 1;
+  }else if(n_read == 0){
+    fprintf(stderr, "Port read timed out");
+    return 1;
+  }else{
+    fprintf(stderr, "Received: '%s'\n", buf);
+  }
+  
+  return 0;
 }
