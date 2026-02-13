@@ -18,7 +18,7 @@ int main(int argc, char** argv){
   //      .flow_control   = SERIAL_FLOWCTRL_NONE,
   //      .parity         = SERIAL_PARITY_NONE
   //      .stop_bits      = SERIAL_PARITY_NONE
-  //      .timeout        = SERIAL_TIMEOUT_INFINITE
+  //      .timeout_ms     = SERIAL_TIMEOUT_INFINITE
   //   )
   // ```
   if(serial_open(&port, port_path) == false){
