@@ -74,7 +74,7 @@ Or they can be updated afterwards.
   SerialSettings settings = serial_get_settings(&port);
   settings.baud_rate = 115200;
   if(serial_set_settings(&port, settings) == false){
-    fprintf(stderr, "Failed to update settings: %s\n", port_path, serial_strerror(serial_error(&port)));
+    fprintf(stderr, "Failed to update settings: %s\n", serial_strerror(serial_error(&port)));
     return 1;
   }
 ```
