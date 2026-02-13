@@ -55,3 +55,26 @@ int main(int argc, char** argv){
 }
 ```
 
+## Configuring Settings
+
+Port settings can be configured when the port is first opened.
+
+```c
+  if(serial_open(&port, port_path
+    .baud_rate = 115200,
+  ) == false){
+    fprintf(stderr, "Failed to open port %s: %s\n", port_path, serial_strerror(serial_error(&port)));
+    return 1;
+  }
+```
+
+Or they can be updated afterwards.
+
+```c
+  SerialSettings settings = serial_get_settings(&port);
+  settings.baud_rate = 115200;
+  if(serial_set_settings(&port, settings) == false){
+    fprintf(stderr, "Failed to update settings: %s\n", port_path, serial_strerror(serial_error(&port)));
+    return 1;
+  }
+```

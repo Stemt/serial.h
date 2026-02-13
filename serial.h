@@ -114,7 +114,7 @@ typedef struct{
 
 bool serial_open_with_settings(SerialPort* self, const char* device, SerialSettings settings);
 SerialSettings serial_get_settings(SerialPort* self);
-bool serial_reconfigure(SerialPort* self, SerialSettings settings);
+bool serial_set_settings(SerialPort* self, SerialSettings settings);
 
 int serial_read(SerialPort* self, char* buf, int length);
 int serial_write(SerialPort* self, const char* buf, int length);
@@ -291,7 +291,7 @@ bool serial_open_with_settings(SerialPort* self, const char* device, SerialSetti
   }
 #endif
   
-  serial_reconfigure(self, settings);
+  serial_set_settings(self, settings);
 
   self->path = device;
   self->handle = handle;
@@ -304,7 +304,7 @@ SerialSettings serial_get_settings(SerialPort* self){
   return self->settings;
 }
 
-bool serial_reconfigure(SerialPort* self, SerialSettings settings) {
+bool serial_set_settings(SerialPort* self, SerialSettings settings) {
 #if SERIAL_OS_WINDOWS
   DCB dcb;
   dcb.DCBlength = sizeof(dcb);
