@@ -24,7 +24,7 @@ int main(int argc, char** argv){
   //      .char_size      = 8,
   //      .flow_control   = SERIAL_FLOWCTRL_NONE,
   //      .parity         = SERIAL_PARITY_NONE
-  //      .stop_bits      = SERIAL_STOPBITS_NONE
+  //      .stop_bits      = SERIAL_STOPBITS_ONE
   //      .timeout_ms     = SERIAL_TIMEOUT_INFINITE
   //   )
   // ```
